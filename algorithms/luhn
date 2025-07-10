@@ -1,0 +1,44 @@
+#!/usr/bin/env python3
+
+import string
+from argparse import ArgumentParser
+
+def verify_credit_card_number(credit_card_number: str) -> bool:
+    numbers = string.digits
+    translate_func = str.maketrans({"-": "", " ": ""})
+
+    credit_card_number = credit_card_number.translate(translate_func)
+
+    for ch in credit_card_number:
+        if ch not in numbers:
+            return False
+
+    total: int = 0
+    for i, n in enumerate(credit_card_number):
+        number: int = int(n)
+        if (i+1) % 2 != 0:
+            number *= 2
+            total += (number // 10)  + (number % 10)
+        else:
+            total += number
+    
+    return (total % 10) == 0
+
+class Parser:
+    def __init__(self):
+        self.parser = ArgumentParser(
+            prog="credit card number validator",
+            description="credit card number validator using 'luhn' algorithm",
+            add_help=True
+        )
+        self.parser.add_argument("credit_card_number", help="credit card number should validate")
+
+    def run(self):
+        args = self.parser.parse_args()
+        if verify_credit_card_number(args.credit_card_number):
+            print("VALID!")
+        else:
+            print("INVALID!")
+
+if __name__ == "__main__":
+    Parser().run()

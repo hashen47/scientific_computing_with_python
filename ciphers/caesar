@@ -1,0 +1,104 @@
+#!/usr/bin/env python3
+
+import string
+from typing import Optional
+from argparse import ArgumentParser
+
+
+class Caesar:
+    offset: int = 3
+    ALL_CHARS = string.ascii_letters + string.digits + string.punctuation + " "
+
+    def __init__(self, offset: int = 3):
+        self.error_msg: str = ""
+        self.offset = offset
+
+    def set_error_msg(self, msg: str):
+        self.error_msg = msg
+
+    def caesar(self, text: str, direction: int) -> Optional[str]:
+        try:
+            cipher_text: str = ""
+            for ch in text:
+                index: int = self.ALL_CHARS.index(ch)
+                cipher_text += self.ALL_CHARS[(index + direction) % len(self.ALL_CHARS)]
+            return cipher_text
+        except ValueError:
+            self.set_error_msg("support only for ascii characters only")
+            return None
+        except:
+            self.set_error_msg("program internal error")
+            return None
+
+    def encrypt(self, plain_text: str) -> Optional[str]:
+        return self.caesar(text=plain_text, direction=self.offset) 
+
+    def decrypt(self, cipher_text: str) -> Optional[str]:
+        return self.caesar(text=cipher_text, direction=-self.offset) 
+
+
+class Parser:
+    def __init__(self):
+        self.error_msg: str = ""
+        self.offset: int = Caesar.offset
+        self.parser = ArgumentParser(
+            prog='caesar cipher',
+            description='caesar cipher implementation for all ascii characters',
+        )
+        self.parser.add_argument("--shift", "-s", help="shift count (default is 3)", required=False, default=3)
+        self.parser.add_argument("--decrypt", "-d", help="decrypt the cipher text (without this flag default is encrypt)", action="store_true")
+        self.parser.add_argument("text", help="text that you want to encrypt/decrypt")
+
+    def set_error_msg(self, msg: str):
+        self.error_msg = f"ERROR: {msg}"
+
+    def _sef_offset(self, offset: str) -> bool:
+        try:
+            n: int = int(offset)
+            if n <= 0:
+                self.set_error_msg("--shift/-s value should be an positive integer")
+                return False
+            self.offset = n
+            return True 
+        except ValueError:
+            self.set_error_msg("--shift/-s value should be an positive integer")
+            return False
+        except:
+            self.set_error_msg("program internal error")
+            return False 
+
+    def print_error_msg(self):
+        print()
+        print(self.error_msg)
+
+    def run(self):
+        args = self.parser.parse_args()
+
+        if args.shift is not None:
+            if not self._sef_offset(args.shift):
+                self.parser.print_help()
+                self.print_error_msg()
+                return
+
+        caesar = Caesar(self.offset)
+        if not args.decrypt:
+            cipher_text = caesar.encrypt(args.text)
+            if cipher_text == None:
+                self.set_error_msg(caesar.error_msg)
+                self.parser.print_help()
+                self.print_error_msg()
+                return
+            print(cipher_text)
+
+        if args.decrypt:
+            plain_text = caesar.decrypt(args.text)
+            if plain_text == None:
+                self.set_error_msg(caesar.error_msg)
+                self.parser.print_help()
+                self.print_error_msg()
+                return
+            print(plain_text)
+
+
+if __name__ == "__main__":
+    Parser().run()

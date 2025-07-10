@@ -1,0 +1,111 @@
+#!/bin/env python3
+
+import string
+from typing import Optional
+from argparse import ArgumentParser
+
+
+class Vigenere:
+    ALL_CHARS = string.ascii_letters + string.digits + string.punctuation + " "
+
+    def __init__(self):
+        self.key: str = ""
+        self.is_encrypt = True
+        self.error_msg: str = ""
+
+    def set_is_encrypt(self, type: bool):
+        self.is_encrypt = type
+
+    def set_key(self, key: str) -> bool:
+        if key.strip() == "":
+            self.set_error_msg("key cannot be empty")
+            return False
+        for ch in key.strip():
+            if self.ALL_CHARS.find(ch) == -1:
+                self.set_error_msg("key should contains ascii characters only")
+                return False
+        self.key = key
+        return True 
+
+    def set_error_msg(self, msg: str):
+        self.error_msg = msg
+
+    def vigenere(self, text: str) -> Optional[str]:
+        try:
+            direction: int = 1
+            if not self.is_encrypt:
+                direction = -1
+            cipher_text: str = ""
+            key_index: int = 0
+            for ch in text:
+                key_char = self.key[key_index % len(self.key)]
+                offset: int = self.ALL_CHARS.index(key_char) 
+                index: int = self.ALL_CHARS.index(ch)
+                cipher_text += self.ALL_CHARS[(index + offset*direction) % len(self.ALL_CHARS)]
+                key_index += 1
+            return cipher_text
+        except ValueError:
+            self.set_error_msg("text can contains ascii characters only")
+            return None
+        except:
+            return None
+
+    def encrypt(self, text: str) -> Optional[str]:
+        self.set_is_encrypt(True)
+        return self.vigenere(text)
+
+    def decrypt(self, text: str) -> Optional[str]:
+        self.set_is_encrypt(False)
+        return self.vigenere(text)
+
+
+class Parser:
+    def __init__(self):
+        self.cipher: Vigenere = Vigenere() 
+        self.error_msg: str = ""
+        self.parser = ArgumentParser(
+            prog='vigenere cipher',
+            description='vigenere cipher implementation for all ascii characters',
+        )
+        self.parser.add_argument("text", help="text that you want to encrypt/decrypt")
+        self.parser.add_argument("--key", "-k", help="key for encryption/decryption", required=False, default=3)
+        self.parser.add_argument("--decrypt", "-d", help="decrypt the cipher text (without this flag default is encrypt)", action="store_true")
+
+    def set_error_msg(self, msg: str):
+        self.error_msg = f"ERROR: {msg}"
+
+    def print_error_msg(self):
+        print()
+        print(self.error_msg)
+
+    def run(self):
+        args = self.parser.parse_args()
+
+        if args.key is not None:
+            if not self.cipher.set_key(args.key):
+                self.parser.print_help()
+                self.set_error_msg(self.cipher.error_msg)
+                self.print_error_msg()
+                return
+
+        if not args.decrypt:
+            cipher_text = self.cipher.encrypt(args.text)
+            if cipher_text == None:
+                self.set_error_msg(self.cipher.error_msg)
+                self.parser.print_help()
+                self.print_error_msg()
+                return
+            print(cipher_text)
+
+        if args.decrypt:
+            plain_text = self.cipher.decrypt(args.text)
+            if plain_text == None:
+                self.set_error_msg(self.cipher.error_msg)
+                self.parser.print_help()
+                self.print_error_msg()
+                return
+            print(plain_text)
+
+
+if __name__ == "__main__":
+    Parser().run()
